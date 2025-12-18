@@ -10,9 +10,12 @@
         prefix-icon="Search"
         class="search-input"
       />
-      <el-button type="primary" @click="handleUninstall" :disabled="selectedIds.length === 0" class="uninstall-btn">
-        卸载选中组件
-      </el-button>
+      <div class="buttons">
+        <el-button type="primary" @click="handleUninstall" :disabled="selectedIds.length === 0" class="uninstall-btn">
+          卸载选中组件
+        </el-button>
+        <el-button type="primary" @click="_handleBack" class="uninstall-btn"> 完成 </el-button>
+      </div>
     </div>
 
     <!-- 组件列表 -->

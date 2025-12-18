@@ -109,7 +109,6 @@ export const useInstallerStore = defineStore("installer", () => {
       deselectAllComponents() // 自定义安装默认取消全选
     }
   }
-  setInstallType(state.value.installType)
 
   // 设置安装路径
   const setInstallPath = (path: string) => {

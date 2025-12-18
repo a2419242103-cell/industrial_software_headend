@@ -28,9 +28,9 @@
     <div class="result-footer">
       <el-button @click="viewLog" type="link">查看安装日志</el-button>
       <el-button v-if="installerStore.state.installationStatus === 'success'" @click="launchApp"> 立即启动 </el-button>
-      <!-- <el-button type="primary" @click="$emit('back')">
-        {{ installerStore.state.installationStatus === "success" ? "完成" : "返回" }}
-      </el-button> -->
+      <el-button type="primary" @click="_handleBack">
+        {{ installerStore.state.installationStatus === "success" ? "安装新组件" : "返回" }}
+      </el-button>
       <el-button
         v-if="installerStore.state.installationStatus === 'success'"
         type="warning"
@@ -61,7 +61,7 @@ import { ElMessage } from "element-plus"
 import { useInstallerStore } from "@/store/modules/installer"
 
 const installerStore = useInstallerStore()
-const _emit = defineEmits(["back", "uninstall"])
+const _emit = defineEmits(["back", "uninstall", "outUninstall"])
 const logVisible = ref(false)
 
 // 查看日志
@@ -86,6 +86,12 @@ const exportLog = () => {
   a.click()
   URL.revokeObjectURL(url)
   ElMessage.success("日志已导出")
+}
+
+// 返回
+const _handleBack = () => {
+  _emit("outUninstall")
+  _emit("back")
 }
 </script>
 
@@ -121,6 +127,10 @@ const exportLog = () => {
     display: flex;
     gap: 10px;
     justify-content: center;
+  }
+
+  .el-result__extra {
+    width: -webkit-fill-available;
   }
 }
 </style>

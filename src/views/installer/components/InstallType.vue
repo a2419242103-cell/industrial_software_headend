@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue"
+import { computed, onMounted } from "vue"
 import { useInstallerStore } from "@/store/modules/installer"
 
 const installerStore = useInstallerStore()
@@ -43,6 +43,11 @@ const _emit = defineEmits(["next"])
 const installType = computed({
   get: () => installerStore.state.installType,
   set: (val) => installerStore.setInstallType(val)
+})
+
+// 页面挂载时执行setInstallType
+onMounted(() => {
+  installerStore.setInstallType("full")
 })
 
 // 计算组件总数和总大小（模拟）

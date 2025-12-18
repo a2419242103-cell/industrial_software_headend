@@ -26,7 +26,12 @@
       <InstallProgress v-if="installerStore.state.step === 3" @prev="prevStep" @next="nextStep" />
 
       <!-- 5. 安装结果 -->
-      <InstallResult v-if="installerStore.state.step === 4" @back="resetInstall" @uninstall="goToUninstall" />
+      <InstallResult
+        v-if="installerStore.state.step === 4"
+        @back="resetInstall"
+        @uninstall="goToUninstall"
+        @outUninstall="leaveUninstall"
+      />
 
       <!-- 卸载页面 -->
       <Uninstall v-if="isUninstallPage" @back="leaveUninstall" />
