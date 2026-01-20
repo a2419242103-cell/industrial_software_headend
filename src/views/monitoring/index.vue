@@ -1,29 +1,81 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue"
-import {
-  ElTable,
-  ElTableColumn,
-  ElButton,
-  ElInput,
-  ElPagination,
-  ElTag,
-  ElMessage,
-  TabPaneName,
-  ElMessageBox
-} from "element-plus"
-import { Server, Task } from "@/api/monitoring/types/task-server"
-// import {
-//   getTasksRunning,
-//   getServers,
-//   changeServerResource,
-//   changeTaskPriority,
-//   allocateTaskResources,
-//   allocateServerResources
-// } from "@/api/monitoring"
+import { ElTable, ElTableColumn, ElButton, ElInput, ElPagination, ElTag, ElMessage } from "element-plus"
+
+// ---------- 类型定义 ----------
+interface Server {
+  id: string
+  name: string
+  ip: string
+  type: string
+  status: "running" | "idle" | "offline" | "maintenance"
+  cpuCores: number
+  memory: number
+  cpuUsage: number
+  memoryUsage: number
+  currentTask: string | null
+  lastOnline: string
+}
+
+// interface ServerListParams {
+//   page: number
+//   pageSize: number
+//   search?: string
+//   status?: string
+//   type?: string
+// }
+
+// interface ServerListResp {
+//   total: number
+//   list: Server[]
+// }
+
 // ---------- 响应式数据 ----------
 const servers = ref<Server[]>([])
 const totalServers = ref(0)
 const isLoading = ref(false)
+
+servers.value = [
+  {
+    id: "1",
+    name: "GPU-Server-01",
+    ip: "192.168.1.101",
+    type: "GPU服务器",
+    status: "running",
+    cpuCores: 32,
+    memory: 128,
+    cpuUsage: 65,
+    memoryUsage: 70,
+    currentTask: "模型训练任务A",
+    lastOnline: "2024-06-20 10:15:00"
+  },
+  {
+    id: "2",
+    name: "CPU-Server-02",
+    ip: "192.168.1.102",
+    type: "CPU服务器",
+    status: "idle",
+    cpuCores: 16,
+    memory: 64,
+    cpuUsage: 20,
+    memoryUsage: 30,
+    currentTask: null,
+    lastOnline: "2024-06-20 09:50:00"
+  },
+  {
+    id: "3",
+    name: "Storage-Server-03",
+    ip: "192.168.1.103",
+    type: "存储服务器",
+    status: "running",
+    cpuCores: 8,
+    memory: 32,
+    cpuUsage: 45,
+    memoryUsage: 50,
+    currentTask: "数据备份任务B",
+    lastOnline: "2024-06-20 11:00:00"
+  }
+]
 
 // 任务列表相关
 const tasks = ref<Task[]>([])
@@ -163,31 +215,6 @@ const taskServerFilter = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 
-// 分页（任务）
-const taskCurrentPage = ref(1)
-const taskPageSize = ref(10)
-
-// 当前激活的标签页
-const activeTab = ref("server")
-
-// 服务器资源调整弹窗相关
-const showServerResourceDialog = ref(false)
-const currentServer = ref<Server | null>(null)
-const serverResourceForm = ref({
-  cpuCores: 0,
-  memory: 0
-})
-
-// 任务优先级调整弹窗相关
-const showTaskPriorityDialog = ref(false)
-const currentTask = ref<Task | null>(null)
-const taskPriorityForm = ref(1)
-
-// 资源分配相关响应式数据
-const selectedTasks = ref<Task[]>([])
-const selectedServers = ref<Server[]>([])
-const isAllocating = ref(false)
-
 // ---------- 工具函数 ----------
 // 服务器状态处理
 const getStatusText = (status: string) => {
@@ -208,56 +235,9 @@ const getStatusTagType = (status: string) => {
   return ""
 }
 
-// 任务状态处理
-const getTaskStatusText = (status: string) => {
-  const map: Record<string, string> = {
-    running: "执行中",
-    completed: "已完成",
-    failed: "失败",
-    pending: "待执行"
-  }
-  return map[status] || "未知"
-}
-
-const getTaskStatusTagType = (status: string) => {
-  if (status === "running") return "success"
-  if (status === "completed") return "info"
-  if (status === "failed") return "danger"
-  if (status === "pending") return "warning"
-  return ""
-}
-
-// 优先级文本转换
-const getPriorityText = (priority: number) => {
-  const map = { 1: "高", 2: "中", 3: "低" }
-  return map[priority] || "未知"
-}
-
-// 优先级标签类型
-const getPriorityTagType = (priority: number) => {
-  const map = { 1: "danger", 2: "warning", 3: "info" }
-  return map[priority] || ""
-}
-
-// 通用任务排序函数
-const sortTasks = (tasks: Task[]): Task[] => {
-  if (!tasks.length) return []
-  return [...tasks].sort((a, b) => {
-    return a.priority - b.priority
-  })
-}
-
-// 验证选中的任务/服务器是否合法
-const validateSelection = (): boolean => {
-  if (selectedTasks.value.length === 0 && selectedServers.value.length === 0) {
-    ElMessage.warning("请至少选择一个任务或服务器！")
-    return false
-  }
-  return true
-}
-
 // ---------- API 调用封装 ----------
 const fetchServers = async () => {
+  if (!ensureLoggedIn()) return
   isLoading.value = true
   try {
     // const response = await getServers({
@@ -456,40 +436,6 @@ const resetFilters = () => {
   currentPage.value = 1
   fetchServers()
 }
-// 重置任务筛选
-const resetTaskFilters = () => {
-  taskSearchQuery.value = ""
-  taskStatusFilter.value = "all"
-  taskServerFilter.value = 0
-  taskCurrentPage.value = 1
-  fetchTasks()
-}
-// 标签页切换时刷新数据
-const handleTabChange = (tab: TabPaneName) => {
-  const tabStr = typeof tab === "number" ? tab.toString() : tab
-  if (tabStr === "server") {
-    fetchServers()
-  } else if (tabStr === "task") {
-    fetchTasks()
-  }
-}
-
-// 打开服务器资源调整弹窗
-const openServerResourceDialog = (server: Server) => {
-  currentServer.value = server
-  serverResourceForm.value = {
-    cpuCores: server.source[0],
-    memory: server.source[1]
-  }
-  showServerResourceDialog.value = true
-}
-
-// 打开任务优先级调整弹窗
-const openTaskPriorityDialog = (task: Task) => {
-  currentTask.value = task
-  taskPriorityForm.value = task.priority
-  showTaskPriorityDialog.value = true
-}
 
 // ---------- 初始化 ----------
 onMounted(() => {
@@ -535,22 +481,10 @@ onMounted(() => {
         </div>
 
         <!-- 服务器列表 -->
-        <!-- 服务器列表：新增勾选列 -->
-        <el-table
-          :data="servers"
-          :style="{ width: '100%' }"
-          v-loading="isLoading"
-          @selection-change="(val) => (selectedServers = val)"
-          ref="serverTableRef"
-        >
-          <!-- 新增：批量选择列 -->
-          <el-table-column type="selection" width="55" />
+        <el-table :data="servers" :style="{ width: '100%' }" v-loading="isLoading">
           <el-table-column prop="name" label="服务器名称" min-width="150" />
           <el-table-column prop="ip" label="IP地址" width="130" />
           <el-table-column prop="type" label="类型" width="120" />
-          <el-table-column prop="source" label="可用资源" width="120">
-            <template #default="{ row }"> {{ row.source[0] }} 核心 / {{ row.source[1] }} GB </template>
-          </el-table-column>
           <el-table-column prop="status" label="状态" width="100">
             <template #default="{ row }">
               <el-tag :type="getStatusTagType(row.status)">
@@ -584,10 +518,8 @@ onMounted(() => {
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="180" fixed="right">
-            <template #default="{ row }">
-              <el-button type="primary" size="small" @click="openServerResourceDialog(row)"> 调整可用资源 </el-button>
-            </template>
+          <el-table-column prop="currentTask" label="当前任务" min-width="150">
+            <template #default="{ row }">{{ row.currentTask || "空闲" }}</template>
           </el-table-column>
         </el-table>
 
@@ -819,6 +751,27 @@ onMounted(() => {
         font-size: 14px;
         font-weight: 500;
       }
+    }
+  }
+
+  .priority-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .priority-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .label {
+        width: 60px;
+        color: #606266;
+      }
+    }
+
+    .priority-select {
+      width: 180px;
     }
   }
 

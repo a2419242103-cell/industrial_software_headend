@@ -46,7 +46,7 @@ export const constantRoutes: RouteRecordRaw[] = [
             component: () => import("@/views/task-management/SharedTask-page2.vue"),
             meta: {
               title: "任务",
-              hidden: true // 保持隐藏
+              hidden: true
             }
           },
           {
@@ -113,7 +113,7 @@ export const constantRoutes: RouteRecordRaw[] = [
       //   meta: {
       //     title: "计算资源管理",
       //     svgIcon: "resource",
-      //     hidden: true  // 不在侧边栏菜单显示
+      //     hidden: true
       //   }
       // },
       {
@@ -156,7 +156,7 @@ export const constantRoutes: RouteRecordRaw[] = [
 
 /**
  * 动态路由
- * 用来放置有权限 (Roles 属性) 的路由
+ * 用来放置有权限(Roles 属性)的路由
  * 必须带有 Name 属性
  */
 export const asyncRoutes: RouteRecordRaw[] = [
@@ -165,7 +165,7 @@ export const asyncRoutes: RouteRecordRaw[] = [
     component: Layouts,
     redirect: "permission-management",
     name: "Management",
-    meta: { title: "管理員功能", svgIcon: "dashboard", affix: true, roles: ["admin"] }, // 默认重定向到 dashboard
+    meta: { title: "管理员功能", svgIcon: "dashboard", affix: true, roles: ["admin"] },
     children: [
       {
         path: "permission-management",
@@ -173,7 +173,7 @@ export const asyncRoutes: RouteRecordRaw[] = [
         name: "PermissionManagement",
         meta: {
           title: "权限管理",
-          roles: ["admin"], // 只有管理员可以访问
+          roles: ["admin"],
           svgIcon: "permission-management"
         }
       },
@@ -183,8 +183,18 @@ export const asyncRoutes: RouteRecordRaw[] = [
         name: "UserManagement",
         meta: {
           title: "用户信息管理",
-          roles: ["admin"], // 只有管理员可以访问
+          roles: ["admin"],
           svgIcon: "user-management"
+        }
+      },
+      {
+        path: "license-management",
+        component: () => import("@/views/license/Manage.vue"),
+        name: "LicenseManagement",
+        meta: {
+          title: "许可证管理",
+          roles: ["admin"],
+          svgIcon: "component"
         }
       }
     ]
@@ -194,14 +204,14 @@ export const asyncRoutes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    ...(routeSettings.thirdLevelRouteCache ? flatMultiLevelRoutes(constantRoutes) : constantRoutes), // 处理常驻路由
-    ...asyncRoutes // 合并动态路由
+    ...(routeSettings.thirdLevelRouteCache ? flatMultiLevelRoutes(constantRoutes) : constantRoutes),
+    ...asyncRoutes
   ]
 })
 
 /** 重置路由 */
 /* export function resetRouter() {
-  // 注意：所有动态路由路由必须带有 Name 属性，否则可能会不能完全重置干净
+  // 注意：所有动态路由必须带有 Name 属性，否则可能不能完全重置干净
   try {
     router.getRoutes().forEach((route) => {
       const { name, meta } = route
@@ -210,7 +220,6 @@ const router = createRouter({
       }
     })
   } catch {
-    // 强制刷新浏览器也行，只是交互体验不是很好
     window.location.reload()
   }
 } */
