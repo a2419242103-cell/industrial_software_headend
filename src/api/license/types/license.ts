@@ -58,6 +58,25 @@ export interface LicenseSaveResult {
   licenseNo: string
 }
 
+export interface LicenseRequestPayload {
+  categoryId: string
+  moduleId: string
+  validFrom: string
+  validTo: string
+  usageCount: number
+  permissions: string[]
+}
+
+export interface LicenseRequestItem extends LicenseRequestPayload {
+  requestId: string
+  userName: string
+  categoryName: string
+  moduleName: string
+  status: "pending" | "approved" | "rejected"
+  createdAt: string
+  licenseNo?: string
+}
+
 export interface LicenseListQuery {
   pageNum: number
   pageSize: number

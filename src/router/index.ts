@@ -1,4 +1,4 @@
-import { type RouteRecordRaw, createRouter, createWebHashHistory } from "vue-router"
+﻿import { type RouteRecordRaw, createRouter, createWebHashHistory } from "vue-router"
 import { flatMultiLevelRoutes } from "./helper"
 import routeSettings from "@/config/route"
 
@@ -156,10 +156,46 @@ export const constantRoutes: RouteRecordRaw[] = [
 
 /**
  * 动态路由
- * 用来放置有权限(Roles 属性)的路由
+ * 用来放置有权限 Roles 属性的路由
  * 必须带有 Name 属性
  */
 export const asyncRoutes: RouteRecordRaw[] = [
+  {
+    path: "/license",
+    component: Layouts,
+    redirect: "/license/apply",
+    name: "License",
+    meta: { title: "许可证管理", svgIcon: "component" },
+    children: [
+      {
+        path: "apply",
+        component: () => import("@/views/license/Apply.vue"),
+        name: "LicenseApply",
+        meta: {
+          title: "许可证申请",
+          roles: ["admin", "user"]
+        }
+      },
+      {
+        path: "download",
+        component: () => import("@/views/license/Download.vue"),
+        name: "LicenseDownload",
+        meta: {
+          title: "许可证下载",
+          roles: ["admin", "user"]
+        }
+      },
+      {
+        path: "manage",
+        component: () => import("@/views/license/Manage.vue"),
+        name: "LicenseManagement",
+        meta: {
+          title: "许可证管理",
+          roles: ["admin"]
+        }
+      }
+    ]
+  },
   {
     path: "/admin",
     component: Layouts,
@@ -185,16 +221,6 @@ export const asyncRoutes: RouteRecordRaw[] = [
           title: "用户信息管理",
           roles: ["admin"],
           svgIcon: "user-management"
-        }
-      },
-      {
-        path: "license-management",
-        component: () => import("@/views/license/Manage.vue"),
-        name: "LicenseManagement",
-        meta: {
-          title: "许可证管理",
-          roles: ["admin"],
-          svgIcon: "component"
         }
       }
     ]

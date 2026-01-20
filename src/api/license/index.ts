@@ -8,7 +8,9 @@ import type {
   LicenseListQuery,
   LicenseItem,
   LicenseSavePayload,
-  LicenseSaveResult
+  LicenseSaveResult,
+  LicenseRequestItem,
+  LicenseRequestPayload
 } from "./types/license"
 
 // TODO: Replace mock usage with real backend endpoints for license categories, modules, list, detail, save, and disable.
@@ -33,6 +35,38 @@ const getCategoryName = (categoryId: string) =>
   mockCategories.find((item) => item.categoryId === categoryId)?.name ?? ""
 
 const getModuleInfo = (moduleId: string) => mockModules.find((item) => item.moduleId === moduleId)
+
+const buildRequestItem = (
+  requestId: string,
+  moduleId: string,
+  userName: string,
+  status: LicenseRequestItem["status"],
+  validFrom: string,
+  validTo: string,
+  usageCount: number,
+  permissions: string[],
+  createdAt: string,
+  licenseNo?: string
+): LicenseRequestItem => {
+  const moduleInfo = getModuleInfo(moduleId)
+  const categoryId = moduleInfo?.categoryId ?? "pre"
+  const categoryName = getCategoryName(categoryId)
+  return {
+    requestId,
+    userName,
+    status,
+    moduleId,
+    moduleName: moduleInfo?.name ?? "",
+    categoryId,
+    categoryName,
+    validFrom,
+    validTo,
+    usageCount,
+    permissions,
+    createdAt,
+    licenseNo
+  }
+}
 
 let mockLicenses: LicenseItem[] = [
   {
@@ -86,6 +120,43 @@ let mockLicenses: LicenseItem[] = [
     createdAt: "2023-01-05",
     expiresAt: "2024-01-05"
   }
+]
+
+let mockLicenseRequests: LicenseRequestItem[] = [
+  buildRequestItem(
+    "req-2024-001",
+    "solver-impact",
+    "张三",
+    "approved",
+    "2024-07-01",
+    "2025-07-01",
+    120,
+    ["view", "run"],
+    "2024-06-10",
+    "LIC-2024-010"
+  ),
+  buildRequestItem(
+    "req-2024-002",
+    "pre-dynamic",
+    "张三",
+    "pending",
+    "2024-08-01",
+    "2025-08-01",
+    80,
+    ["view", "edit"],
+    "2024-06-16"
+  ),
+  buildRequestItem(
+    "req-2024-003",
+    "post-general",
+    "李四",
+    "rejected",
+    "2024-05-01",
+    "2024-11-01",
+    40,
+    ["view", "export"],
+    "2024-05-20"
+  )
 ]
 
 const successResponse = <T>(data: T): ApiResponse<T> => ({
@@ -184,6 +255,36 @@ export const disableLicenseMock = async (licenseId: string): Promise<ApiResponse
   return successResponse(undefined)
 }
 
+export const getLicenseRequestsMock = async (): Promise<ApiResponse<LicenseRequestItem[]>> =>
+  successResponse(mockLicenseRequests)
+
+export const createLicenseRequestMock = async (
+  payload: LicenseRequestPayload,
+  userName = "当前用户"
+): Promise<ApiResponse<LicenseRequestItem>> => {
+  const moduleInfo = getModuleInfo(payload.moduleId)
+  const categoryId = moduleInfo?.categoryId ?? payload.categoryId
+  const categoryName = getCategoryName(categoryId)
+  const requestId = `req-${Date.now()}`
+  const createdAt = new Date().toISOString().slice(0, 10)
+  const requestItem: LicenseRequestItem = {
+    requestId,
+    userName,
+    status: "pending",
+    moduleId: payload.moduleId,
+    moduleName: moduleInfo?.name ?? "",
+    categoryId,
+    categoryName,
+    validFrom: payload.validFrom,
+    validTo: payload.validTo,
+    usageCount: payload.usageCount,
+    permissions: payload.permissions,
+    createdAt
+  }
+  mockLicenseRequests = [requestItem, ...mockLicenseRequests]
+  return successResponse(requestItem)
+}
+
 export const getModuleCategoriesApi = () =>
   request<ApiResponse<ModuleCategory[]>>({
     url: "/license/categories",
@@ -222,6 +323,20 @@ export const getLicenseListApi = (query: LicenseListQuery) =>
     url: "/license/list",
     method: "get",
     params: query
+  })
+
+export const getLicenseRequestsApi = (params?: { userName?: string }) =>
+  request<ApiResponse<LicenseRequestItem[]>>({
+    url: "/license/requests",
+    method: "get",
+    params
+  })
+
+export const createLicenseRequestApi = (payload: LicenseRequestPayload) =>
+  request<ApiResponse<LicenseRequestItem>>({
+    url: "/license/requests",
+    method: "post",
+    data: payload
   })
 
 export const disableLicenseApi = (licenseId: string) =>
