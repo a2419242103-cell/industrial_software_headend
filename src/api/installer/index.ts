@@ -1,36 +1,20 @@
 import { request } from "@/utils/service"
-import type { ApiResponse, Component, Data } from "@/api/installer/types"
+import type { ApiResponse, Component, InstallComponentParams } from "@/api/installer/types"
 
-// 获取未安装组件列表
-const getUninstalledComponents = () => {
+// 获取组件列表
+const getComponents = () => {
   return request<ApiResponse<Component[]>>({
-    url: "/api/components/uninstalled",
+    url: "/api/components",
     method: "get"
   })
 }
 
-// 获取已安装组件列表
-const getInstalledComponents = () => {
-  return request<ApiResponse<Component[]>>({
-    url: "/api/components/installed",
-    method: "get"
-  })
-}
-
-const installComponents = (data: Data[]) => {
+const installComponent = (data: InstallComponentParams) => {
   return request<ApiResponse<void>>({
     url: "/api/components/install",
-    method: "get",
+    method: "post",
     data
   })
 }
 
-const uninstallComponents = (data: Data[]) => {
-  return request<ApiResponse<void>>({
-    url: "/api/components/uninstall",
-    method: "get",
-    data
-  })
-}
-
-export { getUninstalledComponents, getInstalledComponents, installComponents, uninstallComponents }
+export { getComponents, installComponent }

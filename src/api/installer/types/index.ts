@@ -3,19 +3,13 @@ interface Component {
   name: string
   version: string
   size: string
-  installTime?: string
   description: string
   dynamicsDirection?: string
   moduleType?: string
   resourceType?: string
 }
 
-interface Data {
-  id: number
-  dynamicsDirection?: string
-  moduleType?: string
-  resourceType?: string
-}
+type InstallComponentParams = Pick<Component, "id" | "name" | "dynamicsDirection" | "moduleType" | "resourceType">
 
 interface ApiResponse<T> {
   code: number
@@ -23,4 +17,4 @@ interface ApiResponse<T> {
   data: T
 }
 
-export type { Component, Data, ApiResponse }
+export type { Component, InstallComponentParams, ApiResponse }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, nextTick, watch } from "vue"
+import { ref, reactive, onMounted } from "vue"
 import {
   ElTable,
   ElTableColumn,
@@ -14,7 +14,7 @@ import {
 } from "element-plus"
 import type { FormInstance, FormRules } from "element-plus"
 import { getPageUsersApi, updateUserInfoApi, deleteUserApi, resetPasswordApi } from "@/api/userManagement/index"
-import type { ApiResponse, PageData, User } from "@/api/userManagement/types/userManagement"
+import type { User } from "@/api/userManagement/types/userManagement"
 
 // 用户数据
 const userData = ref<User[]>([])
@@ -246,32 +246,6 @@ onMounted(() => {
   </div>
 </template>
 
-<!--<style scoped lang="scss">-->
-<!--.user-page {-->
-<!--  padding: 20px;-->
-<!--  background-color: #fff;-->
-<!--  min-height: calc(100vh - 60px);-->
-<!--}-->
-
-<!--.header {-->
-<!--  margin-bottom: 20px;-->
-<!--}-->
-
-<!--.search-container {-->
-<!--  display: flex;-->
-<!--  gap: 10px;-->
-<!--  width: 400px;-->
-<!--}-->
-
-<!--.pagination {-->
-<!--  margin-top: 20px;-->
-<!--  justify-content: flex-end;-->
-<!--}-->
-
-<!--.el-table {-->
-<!--  margin: 20px 0;-->
-<!--}-->
-<!--</style>-->
 <style scoped lang="scss">
 .user-page {
   padding: 20px;
@@ -293,8 +267,8 @@ onMounted(() => {
 
 .pagination {
   margin-top: 20px;
-  justify-content: center; /* 改为居中显示 */
-  flex-wrap: wrap; /* 允许换行 */
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .el-table {
