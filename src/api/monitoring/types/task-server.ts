@@ -3,7 +3,6 @@ interface Server {
   name: string
   ip: string
   type: string
-  source: [number, number] // [cpuCores, memory]
   status: "running" | "idle" | "offline" | "maintenance"
   cpuCores: number
   memory: number
@@ -19,7 +18,8 @@ interface Task {
   serverName: string
   type: string
   priority: number
-  sourceNeed: [number, number]
+  cpuCoreNeed: number
+  memoryNeed: number
   progress: number
   status: string
   startTime: string
