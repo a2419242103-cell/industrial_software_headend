@@ -190,7 +190,7 @@ export const asyncRoutes: RouteRecordRaw[] = [
         component: () => import("@/views/license/Manage.vue"),
         name: "LicenseManagement",
         meta: {
-          title: "许可证管理",
+          title: "管理员许可证管理",
           roles: ["admin"]
         }
       }

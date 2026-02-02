@@ -6,6 +6,7 @@ import { LICENSE_PERMISSIONS } from "@/constants/license"
 const props = defineProps<{
   items: LicenseItem[]
   loading: boolean
+  showDisable?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -61,10 +62,17 @@ const permissionLabelMap = LICENSE_PERMISSIONS.reduce<Record<string, string>>((a
         </el-tag>
       </template>
     </el-table-column>
-    <el-table-column label="操作" width="220">
+    <el-table-column label="操作" :width="props.showDisable === false ? 120 : 220">
       <template #default="{ row }">
         <el-button size="small" @click="emit('view', row.licenseId)">查询</el-button>
-        <el-button size="small" type="danger" @click="emit('disable', row.licenseId)">停用</el-button>
+        <el-button
+          v-if="props.showDisable !== false"
+          size="small"
+          type="danger"
+          @click="emit('disable', row.licenseId)"
+        >
+          停用
+        </el-button>
       </template>
     </el-table-column>
   </el-table>

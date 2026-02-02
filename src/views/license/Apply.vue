@@ -23,6 +23,8 @@ const categories = ref<ModuleCategory[]>([])
 const modules = ref<LicenseModule[]>([])
 const formRef = ref<FormInstance>()
 const form = ref({
+  customerName: "",
+  macAddress: "",
   categoryId: "",
   moduleId: "",
   validDateRange: [] as string[],
@@ -31,6 +33,8 @@ const form = ref({
 })
 
 const rules = {
+  customerName: [{ required: true, message: "请输入客户名称", trigger: "blur" }],
+  macAddress: [{ required: true, message: "请输入电脑MAC地址", trigger: "blur" }],
   categoryId: [{ required: true, message: "请选择模块类别", trigger: "change" }],
   moduleId: [{ required: true, message: "请选择模块名称", trigger: "change" }],
   validDateRange: [{ type: "array", required: true, message: "请选择使用期限", trigger: "change" }],
@@ -91,6 +95,8 @@ const handleSubmit = async () => {
   loading.value = true
   const [validFrom, validTo] = form.value.validDateRange
   const payload: LicenseRequestPayload = {
+    customerName: form.value.customerName.trim(),
+    macAddress: form.value.macAddress.trim(),
     categoryId: form.value.categoryId,
     moduleId: form.value.moduleId,
     validFrom,
@@ -140,6 +146,12 @@ onMounted(fetchCategories)
 
     <el-dialog v-model="dialogVisible" title="申请许可证" width="560px" @closed="resetForm">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
+        <el-form-item label="客户名称" prop="customerName">
+          <el-input v-model="form.customerName" placeholder="请输入客户名称" clearable />
+        </el-form-item>
+        <el-form-item label="电脑MAC地址" prop="macAddress">
+          <el-input v-model="form.macAddress" placeholder="请输入电脑MAC地址" clearable />
+        </el-form-item>
         <el-form-item label="模块类别" prop="categoryId">
           <el-select v-model="form.categoryId" placeholder="请选择模块类别" @change="handleCategoryChange">
             <el-option v-for="item in categories" :key="item.categoryId" :label="item.name" :value="item.categoryId" />

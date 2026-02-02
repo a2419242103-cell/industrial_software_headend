@@ -1,14 +1,24 @@
 <script setup lang="ts">
-import { reactive, watch } from "vue"
+import { reactive, watch, withDefaults } from "vue"
 import { ElForm, ElFormItem, ElInput, ElSelect, ElOption, ElButton } from "element-plus"
 import type { LicenseListQuery, ModuleCategory } from "@/api/license/types/license"
 import { LICENSE_STATUS_OPTIONS } from "@/constants/license"
 
-const props = defineProps<{
-  modelValue: LicenseListQuery
-  categories: ModuleCategory[]
-  loading: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    modelValue: LicenseListQuery
+    categories: ModuleCategory[]
+    loading: boolean
+    showLicenseNo?: boolean
+    statusOptions?: { label: string; value: string }[]
+    statusLabel?: string
+  }>(),
+  {
+    showLicenseNo: true,
+    statusOptions: () => LICENSE_STATUS_OPTIONS,
+    statusLabel: "使用状态"
+  }
+)
 
 const emit = defineEmits<{
   (e: "update:modelValue", value: LicenseListQuery): void
@@ -60,7 +70,7 @@ const handleReset = () => {
 
 <template>
   <el-form class="search-form" inline label-width="110px">
-    <el-form-item label="许可证编号">
+    <el-form-item v-if="props.showLicenseNo" label="许可证编号">
       <el-input v-model="localQuery.licenseNo" placeholder="请输入许可证编号" clearable />
     </el-form-item>
     <el-form-item label="模块类别">
@@ -73,9 +83,9 @@ const handleReset = () => {
         />
       </el-select>
     </el-form-item>
-    <el-form-item label="使用状态">
+    <el-form-item :label="props.statusLabel">
       <el-select v-model="localQuery.status" placeholder="请选择状态" clearable style="width: 160px">
-        <el-option v-for="item in LICENSE_STATUS_OPTIONS" :key="item.value" :label="item.label" :value="item.value" />
+        <el-option v-for="item in props.statusOptions" :key="item.value" :label="item.label" :value="item.value" />
       </el-select>
     </el-form-item>
     <el-form-item>

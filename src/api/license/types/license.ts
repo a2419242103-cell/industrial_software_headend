@@ -59,6 +59,8 @@ export interface LicenseSaveResult {
 }
 
 export interface LicenseRequestPayload {
+  customerName: string
+  macAddress: string
   categoryId: string
   moduleId: string
   validFrom: string

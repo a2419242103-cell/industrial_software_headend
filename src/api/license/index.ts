@@ -4,23 +4,19 @@ import type {
   PageData,
   ModuleCategory,
   LicenseModule,
-  LicenseDetail,
   LicenseListQuery,
   LicenseItem,
-  LicenseSavePayload,
-  LicenseSaveResult,
   LicenseRequestItem,
   LicenseRequestPayload
 } from "./types/license"
 
-// TODO: Replace mock usage with real backend endpoints for license categories, modules, list, detail, save, and disable.
+// TODO: Replace mock usage with real backend endpoints for license categories, modules, list, requests, approvals, uploads, and downloads.
 
 const mockCategories: ModuleCategory[] = [
   { categoryId: "pre", name: "前处理" },
   { categoryId: "solver", name: "求解器" },
   { categoryId: "post", name: "后处理" }
 ]
-
 const mockModules: LicenseModule[] = [
   { moduleId: "pre-impact", moduleNo: "PRE-IMP-001", name: "冲击", categoryId: "pre" },
   { moduleId: "pre-dynamic", moduleNo: "PRE-DYN-002", name: "动力", categoryId: "pre" },
@@ -30,7 +26,6 @@ const mockModules: LicenseModule[] = [
   { moduleId: "solver-multi", moduleNo: "SOL-MBD-103", name: "多体", categoryId: "solver" },
   { moduleId: "post-general", moduleNo: "POST-GEN-201", name: "通用后处理", categoryId: "post" }
 ]
-
 const getCategoryName = (categoryId: string) =>
   mockCategories.find((item) => item.categoryId === categoryId)?.name ?? ""
 
@@ -40,6 +35,8 @@ const buildRequestItem = (
   requestId: string,
   moduleId: string,
   userName: string,
+  customerName: string,
+  macAddress: string,
   status: LicenseRequestItem["status"],
   validFrom: string,
   validTo: string,
@@ -54,6 +51,8 @@ const buildRequestItem = (
   return {
     requestId,
     userName,
+    customerName,
+    macAddress,
     status,
     moduleId,
     moduleName: moduleInfo?.name ?? "",
@@ -68,7 +67,7 @@ const buildRequestItem = (
   }
 }
 
-let mockLicenses: LicenseItem[] = [
+const mockLicenses: LicenseItem[] = [
   {
     licenseId: "lic-001",
     licenseNo: "LIC-2024-001",
@@ -121,12 +120,13 @@ let mockLicenses: LicenseItem[] = [
     expiresAt: "2024-01-05"
   }
 ]
-
 let mockLicenseRequests: LicenseRequestItem[] = [
   buildRequestItem(
     "req-2024-001",
     "solver-impact",
     "张三",
+    "华北工业集团",
+    "3C:52:82:1A:9F:01",
     "approved",
     "2024-07-01",
     "2025-07-01",
@@ -139,6 +139,8 @@ let mockLicenseRequests: LicenseRequestItem[] = [
     "req-2024-002",
     "pre-dynamic",
     "张三",
+    "江南动力科技",
+    "8C:7B:9D:2F:11:0A",
     "pending",
     "2024-08-01",
     "2025-08-01",
@@ -150,6 +152,8 @@ let mockLicenseRequests: LicenseRequestItem[] = [
     "req-2024-003",
     "post-general",
     "李四",
+    "东启精工",
+    "A4:5E:60:7B:31:9C",
     "rejected",
     "2024-05-01",
     "2024-11-01",
@@ -158,6 +162,13 @@ let mockLicenseRequests: LicenseRequestItem[] = [
     "2024-05-20"
   )
 ]
+const updateRequestItem = (requestId: string, patch: Partial<LicenseRequestItem>): LicenseRequestItem | null => {
+  const target = mockLicenseRequests.find((item) => item.requestId === requestId)
+  if (!target) return null
+  const updated: LicenseRequestItem = { ...target, ...patch }
+  mockLicenseRequests = mockLicenseRequests.map((item) => (item.requestId === requestId ? updated : item))
+  return updated
+}
 
 const successResponse = <T>(data: T): ApiResponse<T> => ({
   code: 200,
@@ -171,30 +182,6 @@ export const getModuleCategoriesMock = async (): Promise<ApiResponse<ModuleCateg
 export const getModulesByCategoryMock = async (categoryId: string): Promise<ApiResponse<LicenseModule[]>> => {
   const data = mockModules.filter((item) => item.categoryId === categoryId)
   return successResponse(data)
-}
-
-export const getLicenseDetailMock = async (licenseId: string): Promise<ApiResponse<LicenseDetail>> => {
-  const target = mockLicenses.find((item) => item.licenseId === licenseId)
-  const moduleId = target?.moduleId ?? mockModules[0]?.moduleId ?? ""
-  const validFrom = target?.validFrom ?? "2024-06-01"
-  const validTo = target?.validTo ?? "2025-06-01"
-  const detail: LicenseDetail = {
-    licenseId,
-    licenseNo: target?.licenseNo ?? "LIC-NEW",
-    status: target?.status ?? "active",
-    createdAt: target?.createdAt ?? validFrom,
-    expiresAt: target?.expiresAt ?? validTo,
-    modules: [
-      {
-        moduleId,
-        validFrom,
-        validTo,
-        usageCount: target?.usageCount ?? 100,
-        permissions: target?.permissions ?? ["view", "run"]
-      }
-    ]
-  }
-  return successResponse(detail)
 }
 
 export const getLicenseListMock = async (query: LicenseListQuery): Promise<ApiResponse<PageData<LicenseItem>>> => {
@@ -215,48 +202,45 @@ export const getLicenseListMock = async (query: LicenseListQuery): Promise<ApiRe
   })
 }
 
-export const saveLicenseMock = async (payload: LicenseSavePayload): Promise<ApiResponse<LicenseSaveResult>> => {
-  const licenseId = payload.licenseId ?? `lic-${Date.now()}`
-  const licenseNo = payload.licenseId ? `LIC-UPDATED-${payload.licenseId}` : `LIC-${Date.now()}`
-  const moduleConfig = payload.modules[0]
-  const moduleInfo = moduleConfig ? getModuleInfo(moduleConfig.moduleId) : undefined
-  const categoryId = moduleInfo?.categoryId ?? "pre"
-  const categoryName = getCategoryName(categoryId)
-  const existing = mockLicenses.find((item) => item.licenseId === licenseId)
-  const userName = existing?.userName ?? "管理员"
-  const updatedLicense: LicenseItem = {
-    licenseId,
-    licenseNo,
-    categoryId,
-    categoryName,
-    moduleId: moduleInfo?.moduleId ?? "pre-impact",
-    moduleNo: moduleInfo?.moduleNo ?? "PRE-IMP-001",
-    moduleName: moduleInfo?.name ?? "冲击",
-    validFrom: moduleConfig?.validFrom ?? "2024-09-01",
-    validTo: moduleConfig?.validTo ?? "2025-09-01",
-    usageCount: moduleConfig?.usageCount ?? 100,
-    permissions: moduleConfig?.permissions ?? ["view"],
-    userName,
-    status: existing?.status ?? "active",
-    createdAt: existing?.createdAt ?? "2024-09-01",
-    expiresAt: existing?.expiresAt ?? "2025-09-01"
-  }
-
-  if (!payload.licenseId) {
-    mockLicenses = [updatedLicense, ...mockLicenses]
-  } else {
-    mockLicenses = mockLicenses.map((item) => (item.licenseId === licenseId ? updatedLicense : item))
-  }
-  return successResponse({ licenseId, licenseNo })
-}
-
-export const disableLicenseMock = async (licenseId: string): Promise<ApiResponse<void>> => {
-  mockLicenses = mockLicenses.map((item) => (item.licenseId === licenseId ? { ...item, status: "disabled" } : item))
-  return successResponse(undefined)
-}
-
 export const getLicenseRequestsMock = async (): Promise<ApiResponse<LicenseRequestItem[]>> =>
   successResponse(mockLicenseRequests)
+
+export const approveLicenseRequestMock = async (
+  requestId: string,
+  _data?: { remark?: string }
+): Promise<ApiResponse<LicenseRequestItem>> => {
+  const updated = updateRequestItem(requestId, { status: "approved" })
+  if (!updated) return Promise.reject(new Error("license request not found"))
+  return successResponse(updated)
+}
+
+export const rejectLicenseRequestMock = async (
+  requestId: string,
+  _data?: { remark?: string }
+): Promise<ApiResponse<LicenseRequestItem>> => {
+  const updated = updateRequestItem(requestId, { status: "rejected" })
+  if (!updated) return Promise.reject(new Error("license request not found"))
+  return successResponse(updated)
+}
+
+export const uploadLicenseFileMock = async (
+  requestId: string,
+  data?: FormData
+): Promise<ApiResponse<LicenseRequestItem>> => {
+  const licenseNoValue = data?.get("licenseNo")
+  const licenseNo =
+    typeof licenseNoValue === "string" && licenseNoValue.trim() ? licenseNoValue.trim() : `LIC-UP-${Date.now()}`
+  const updated = updateRequestItem(requestId, { status: "approved", licenseNo })
+  if (!updated) return Promise.reject(new Error("license request not found"))
+  return successResponse(updated)
+}
+
+export const downloadLicenseFileMock = async (requestId: string): Promise<Blob> => {
+  const target = mockLicenseRequests.find((item) => item.requestId === requestId)
+  const label = target?.licenseNo ?? requestId
+  const content = `Mock license file for ${label}`
+  return new Blob([content], { type: "text/plain" })
+}
 
 export const createLicenseRequestMock = async (
   payload: LicenseRequestPayload,
@@ -270,6 +254,8 @@ export const createLicenseRequestMock = async (
   const requestItem: LicenseRequestItem = {
     requestId,
     userName,
+    customerName: payload.customerName,
+    macAddress: payload.macAddress,
     status: "pending",
     moduleId: payload.moduleId,
     moduleName: moduleInfo?.name ?? "",
@@ -298,26 +284,6 @@ export const getModulesByCategoryApi = (categoryId: string) =>
     params: { categoryId }
   })
 
-export const getLicenseDetailApi = (licenseId: string) =>
-  request<ApiResponse<LicenseDetail>>({
-    url: `/license/${licenseId}`,
-    method: "get"
-  })
-
-export const saveLicenseApi = (payload: LicenseSavePayload) =>
-  request<ApiResponse<LicenseSaveResult>>({
-    url: "/license",
-    method: "post",
-    data: payload
-  })
-
-export const generateLicenseApi = (payload: LicenseSavePayload) =>
-  request<ApiResponse<LicenseSaveResult>>({
-    url: "/license/generate",
-    method: "post",
-    data: payload
-  })
-
 export const getLicenseListApi = (query: LicenseListQuery) =>
   request<ApiResponse<PageData<LicenseItem>>>({
     url: "/license/list",
@@ -339,8 +305,35 @@ export const createLicenseRequestApi = (payload: LicenseRequestPayload) =>
     data: payload
   })
 
-export const disableLicenseApi = (licenseId: string) =>
-  request<ApiResponse<void>>({
-    url: `/license/${licenseId}/disable`,
-    method: "post"
+export const approveLicenseRequestApi = (requestId: string, data?: { remark?: string }) =>
+  request<ApiResponse<LicenseRequestItem>>({
+    url: `/license/requests/${requestId}/approve`,
+    method: "post",
+    data
+  })
+
+export const rejectLicenseRequestApi = (requestId: string, data?: { remark?: string }) =>
+  request<ApiResponse<LicenseRequestItem>>({
+    url: `/license/requests/${requestId}/reject`,
+    method: "post",
+    data
+  })
+
+export const uploadLicenseFileApi = (requestId: string, data: FormData) =>
+  request<ApiResponse<LicenseRequestItem>>({
+    url: `/license/requests/${requestId}/upload`,
+    method: "post",
+    headers: {
+      "Content-Type": "multipart/form-data"
+    },
+    data,
+    timeout: 0
+  })
+
+export const downloadLicenseFileApi = (requestId: string) =>
+  request<Blob>({
+    url: `/license/requests/${requestId}/download`,
+    method: "get",
+    responseType: "blob",
+    timeout: 0
   })

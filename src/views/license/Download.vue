@@ -2,7 +2,12 @@
 import { computed, onMounted, ref } from "vue"
 import { ElMessage } from "element-plus"
 import type { LicenseRequestItem } from "@/api/license/types/license"
-import { getLicenseRequestsApi, getLicenseRequestsMock } from "@/api/license"
+import {
+  downloadLicenseFileApi,
+  downloadLicenseFileMock,
+  getLicenseRequestsApi,
+  getLicenseRequestsMock
+} from "@/api/license"
 import { LICENSE_PERMISSIONS, LICENSE_REQUEST_STATUS_OPTIONS } from "@/constants/license"
 import { useUserStoreHook } from "@/store/modules/user"
 
@@ -56,9 +61,32 @@ const fetchRequests = async () => {
   }
 }
 
-const handleDownload = (row: LicenseRequestItem) => {
+const handleDownload = async (row: LicenseRequestItem) => {
   const label = row.licenseNo ?? row.requestId
-  ElMessage.success(`已开始下载许可证：${label}`)
+  const filename = `license-${label}.lic`
+  try {
+    const blob = await downloadLicenseFileApi(row.requestId)
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = filename
+    link.click()
+    window.URL.revokeObjectURL(url)
+    ElMessage.success(`已开始下载许可证：${label}`)
+  } catch (error) {
+    try {
+      const blob = await downloadLicenseFileMock(row.requestId)
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = filename
+      link.click()
+      window.URL.revokeObjectURL(url)
+      ElMessage.success(`已开始下载许可证：${label}`)
+    } catch (mockError) {
+      ElMessage.error("下载失败")
+    }
+  }
 }
 
 onMounted(fetchRequests)
